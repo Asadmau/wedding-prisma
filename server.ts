@@ -105,7 +105,7 @@ function buildInvitationHtml(
 
   return html;
 }
-
+/*
 function createInvitationMetadataMiddleware(indexHtml: string) {
   const excludedPaths = new Set([
     'admin',
@@ -161,6 +161,70 @@ function createInvitationMetadataMiddleware(indexHtml: string) {
     } catch (error) {
       // Jika slug tidak ditemukan, lanjutkan ke SPA fallback.
       // Error database yang tidak diharapkan tetap dicatat.
+      if (
+        error instanceof Error &&
+        !error.message.includes('tidak ditemukan') &&
+        !error.message.includes('Belum ada undangan')
+      ) {
+        console.error('Invitation metadata error:', error);
+      }
+
+      next();
+    }
+  };
+}
+  */
+function createInvitationMetadataMiddleware(indexHtml: string) {
+  const excludedPaths = new Set([
+    'admin',
+    'api',
+    'health',
+    'assets',
+    'favicon.ico',
+    'robots.txt',
+    'sitemap.xml',
+  ]);
+
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    if (req.method !== 'GET') return next();
+
+    const pathname = req.path;
+    const segments = pathname.split('/').filter(Boolean);
+
+    // Abaikan halaman admin dan endpoint API.
+    if (segments.length > 0 && excludedPaths.has(segments[0])) {
+      return next();
+    }
+
+    // Abaikan file statis seperti JS, CSS, gambar, dan font.
+    if (path.extname(pathname)) {
+      return next();
+    }
+
+    try {
+      const slug =
+        segments.length === 0
+          ? await getDefaultPublicSlug()
+          : segments[0];
+
+      const invitationData = await getPublicInvitationBySlug(slug);
+
+      const pageUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+
+      const html = buildInvitationHtml(
+        indexHtml,
+        invitationData,
+        pageUrl,
+      );
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.status(200).send(html);
+    } catch (error) {
       if (
         error instanceof Error &&
         !error.message.includes('tidak ditemukan') &&
