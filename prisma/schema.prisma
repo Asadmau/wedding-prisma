@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Admin {
+  id           String    @id
+  email        String    @unique
+  name         String
+  passwordHash String    @map("password_hash")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    String    @map("created_at")
+  updatedAt    String    @map("updated_at")
+  sessions     Session[]
+  @@map("admins")
+}
+
+model Session {
+  id        String   @id
+  adminId   String   @map("admin_id")
+  tokenHash String   @unique @map("token_hash")
+  csrfToken String   @map("csrf_token")
+  expiresAt String   @map("expires_at")
+  userAgent String?  @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  createdAt String   @map("created_at")
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  @@index([adminId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Template {
+  id              String       @id
+  key             String       @unique
+  name            String
+  description     String
+  previewImageUrl String       @map("preview_image_url")
+  accentColor     String       @map("accent_color")
+  isActive        Boolean      @default(true) @map("is_active")
+  sortOrder       Int          @default(0) @map("sort_order")
+  createdAt       String       @map("created_at")
+  updatedAt       String       @map("updated_at")
+  invitations     Invitation[]
+  @@map("templates")
+}
+
+model Invitation {
+  id                 String         @id
+  title              String
+  slug               String         @unique
+  templateId         String         @map("template_id")
+  isPublished        Boolean        @default(true) @map("is_published")
+  heroSubtitle       String         @default("") @map("hero_subtitle")
+  heroImageUrl       String         @default("") @map("hero_image_url")
+  openingQuote       String         @default("") @map("opening_quote")
+  openingQuoteAuthor String         @default("") @map("opening_quote_author")
+  seoTitle           String         @default("") @map("seo_title")
+  seoDescription     String         @default("") @map("seo_description")
+  ogImageUrl         String         @default("") @map("og_image_url")
+  musicUrl           String         @default("") @map("music_url")
+  musicTitle         String         @default("") @map("music_title")
+  isMusicEnabled     Boolean        @default(true) @map("is_music_enabled")
+  primaryDate        String         @map("primary_date")
+  countdownTarget    String         @map("countdown_target")
+  createdAt          String         @map("created_at")
+  updatedAt          String         @map("updated_at")
+  template           Template       @relation(fields: [templateId], references: [id])
+  couple             Couple?
+  events             Event[]
+  loveStories        LoveStory[]
+  galleries          Gallery[]
+  guests             Guest[]
+  rsvps              Rsvp[]
+  wishes             Wish[]
+  giftAccounts       GiftAccount[]
+  siteSettings       SiteSetting?
+  @@index([slug])
+  @@map("invitations")
+}
+
+model Couple {
+  id             String     @id
+  invitationId   String     @unique @map("invitation_id")
+  groomFullName  String     @map("groom_full_name")
+  groomNickName  String     @map("groom_nick_name")
+  groomParents   String     @default("") @map("groom_parents")
+  groomBio       String     @default("") @map("groom_bio")
+  groomInstagram String     @default("") @map("groom_instagram")
+  groomPhotoUrl  String     @default("") @map("groom_photo_url")
+  brideFullName  String     @map("bride_full_name")
+  brideNickName  String     @map("bride_nick_name")
+  brideParents   String     @default("") @map("bride_parents")
+  brideBio       String     @default("") @map("bride_bio")
+  brideInstagram String     @default("") @map("bride_instagram")
+  bridePhotoUrl  String     @default("") @map("bride_photo_url")
+  createdAt      String     @map("created_at")
+  updatedAt      String     @map("updated_at")
+  invitation     Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  @@map("couples")
+}
+
+model Event {
+  id            String     @id
+  invitationId  String     @map("invitation_id")
+  title         String
+  category      String     @default("CEREMONY")
+  eventDate     String     @map("event_date")
+  startTime     String     @map("start_time")
+  endTime       String     @default("") @map("end_time")
+  timezone      String     @default("WIB")
+  venueName     String     @map("venue_name")
+  venueAddress  String     @map("venue_address")
+  mapsUrl       String     @default("") @map("maps_url")
+  mapsEmbedUrl  String     @default("") @map("maps_embed_url")
+  dressCode     String     @default("") @map("dress_code")
+  description   String     @default("")
+  sortOrder     Int        @default(0) @map("sort_order")
+  createdAt     String     @map("created_at")
+  updatedAt     String     @map("updated_at")
+  invitation    Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  @@index([invitationId])
+  @@map("events")
+}
+
+model LoveStory {
+  id           String     @id
+  invitationId String     @map("invitation_id")
+  title        String
+  periodLabel  String     @map("period_label")
+  storyDate    String     @default("") @map("story_date")
+  description  String
+  imageUrl     String     @default("") @map("image_url")
+  sortOrder    Int        @default(0) @map("sort_order")
+  createdAt    String     @map("created_at")
+  updatedAt    String     @map("updated_at")
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  @@index([invitationId])
+  @@map("love_stories")
+}
+
+model Gallery {
+  id           String     @id
+  invitationId String     @map("invitation_id")
+  title        String
+  caption      String     @default("")
+  imageUrl     String     @map("image_url")
+  storageKey   String     @default("") @map("storage_key")
+  mimeType     String     @default("image/jpeg") @map("mime_type")
+  fileSize     Int        @default(0) @map("file_size")
+  sortOrder    Int        @default(0) @map("sort_order")
+  createdAt    String     @map("created_at")
+  updatedAt    String     @map("updated_at")
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  @@index([invitationId])
+  @@map("galleries")
+}
+
+model Guest {
+  id             String       @id
+  invitationId   String       @map("invitation_id")
+  fullName       String       @map("full_name")
+  phone          String       @default("")
+  email          String       @default("")
+  groupName      String       @default("Umum") @map("group_name")
+  maxGuests      Int          @default(2) @map("max_guests")
+  guestSlug      String?      @map("guest_slug")
+  tokenHash      String       @unique @map("token_hash")
+  tokenEncrypted String       @default("") @map("token_encrypted")
+  notes          String       @default("")
+  createdAt      String       @map("created_at")
+  updatedAt      String       @map("updated_at")
+  invitation     Invitation   @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  rsvp           Rsvp?
+  wishes         Wish[]
+  @@index([invitationId])
+  @@index([tokenHash])
+  @@unique([invitationId, guestSlug])
+  @@map("guests")
+}
+
+model Rsvp {
+  id               String     @id
+  invitationId     String     @map("invitation_id")
+  guestId          String?    @unique @map("guest_id")
+  guestName        String     @map("guest_name")
+  guestPhone       String     @default("") @map("guest_phone")
+  attendanceStatus String     @map("attendance_status")
+  guestCount       Int        @default(1) @map("guest_count")
+  message          String     @default("")
+  editTokenHash    String     @default("") @map("edit_token_hash")
+  createdAt        String     @map("created_at")
+  updatedAt        String     @map("updated_at")
+  invitation       Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  guest            Guest?     @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  @@index([invitationId])
+  @@index([attendanceStatus])
+  @@map("rsvps")
+}
+
+model Wish {
+  id            String     @id
+  invitationId  String     @map("invitation_id")
+  guestId       String?    @map("guest_id")
+  authorName    String     @map("author_name")
+  relationLabel String     @default("") @map("relation_label")
+  message       String
+  status        String     @default("PENDING")
+  moderatedAt  String?    @map("moderated_at")
+  createdAt     String     @map("created_at")
+  updatedAt     String     @map("updated_at")
+  invitation    Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  guest         Guest?     @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  @@index([invitationId, status])
+  @@map("wishes")
+}
+
+model GiftAccount {
+  id            String     @id
+  invitationId  String     @map("invitation_id")
+  bankName      String     @map("bank_name")
+  accountNumber String     @map("account_number")
+  accountHolder String     @map("account_holder")
+  qrImageUrl    String     @default("") @map("qr_image_url")
+  notes         String     @default("")
+  sortOrder     Int        @default(0) @map("sort_order")
+  isActive      Boolean    @default(true) @map("is_active")
+  createdAt     String     @map("created_at")
+  updatedAt     String     @map("updated_at")
+  invitation    Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  @@index([invitationId])
+  @@map("gift_accounts")
+}
+
+model SiteSetting {
+  id                 String     @id
+  invitationId       String     @unique @map("invitation_id")
+  rsvpEnabled        Boolean    @default(true) @map("rsvp_enabled")
+  rsvpDeadline       String     @default("") @map("rsvp_deadline")
+  wishesEnabled      Boolean    @default(true) @map("wishes_enabled")
+  wishesAutoApprove  Boolean    @default(false) @map("wishes_auto_approve")
+  giftsEnabled       Boolean    @default(true) @map("gifts_enabled")
+  musicEnabled       Boolean    @default(true) @map("music_enabled")
+  galleryEnabled     Boolean    @default(true) @map("gallery_enabled")
+  loveStoryEnabled   Boolean    @default(true) @map("love_story_enabled")
+  whatsappTemplate   String     @default("") @map("whatsapp_template")
+  footerText         String     @default("") @map("footer_text")
+  createdAt          String     @map("created_at")
+  updatedAt          String     @map("updated_at")
+  invitation         Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  @@map("site_settings")
+}
