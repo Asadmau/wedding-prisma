@@ -213,7 +213,9 @@ function createInvitationMetadataMiddleware(indexHtml: string) {
 
       const invitationData = await getPublicInvitationBySlug(slug);
 
-      const pageUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      // const pageUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      const protocol = env.isProduction ? 'https' : req.protocol;
+      const pageUrl = `${protocol}://${req.get('host')}${req.originalUrl}`;
 
       const html = buildInvitationHtml(
         indexHtml,
